@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="bn" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="ToolNest — স্টুডেন্টদের জন্য ৮৫+ বিনামূল্যে অনলাইন টুলস। GPA Calculator, Word Counter, AI Summarizer, Unit Converter এবং আরো অনেক কিছু।">
+  <meta name="author" content="Muhammad Shourov">
+  <meta name="robots" content="index, follow">
+  <meta property="og:title" content="ToolNest — সব টুলস এক জায়গায়">
+  <meta property="og:description" content="৮৫+ ফ্রি অনলাইন টুলস — বাংলায়। কোনো রেজিস্ট্রেশন লাগবে না।">
+  <meta property="og:type" content="website">
+  <title>ToolNest — সব টুলস এক জায়গায়</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#2563eb">
+</head>
+<body>
+  <!-- id="tn-root" tells script.js this is root level (no base path needed) -->
+  <div id="tn-root" data-base=""></div>
+
+  <!-- ======= HERO ======= -->
+  <main>
+    <section class="tn-hero" aria-label="Search tools">
+      <h1 data-bn="সব টুলস এক জায়গায়" data-en="All Tools in One Place">সব টুলস এক জায়গায়</h1>
+      <p data-bn="৮৫+ বিনামূল্যে টুলস — কোনো রেজিস্ট্রেশন লাগবে না" data-en="85+ free tools — no registration needed">৮৫+ বিনামূল্যে টুলস — কোনো রেজিস্ট্রেশন লাগবে না</p>
+      <div class="tn-hero-search" role="search">
+        <span class="tn-hero-search-icon" aria-hidden="true">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </span>
+        <input type="search" id="hero-search" placeholder="টুলের নাম লিখুন... (যেমন: GPA, Word Counter)" autocomplete="off" aria-label="Search tools" oninput="onHeroSearch(this.value)">
+        <button class="tn-hero-search-btn" type="button" onclick="onHeroSearch(document.getElementById('hero-search').value)" aria-label="Search">খুঁজুন</button>
+        <div class="tn-search-dropdown" id="hero-drop" role="listbox"></div>
+      </div>
+    </section>
+
+    <!-- ======= CATEGORY PILLS ======= -->
+    <div class="tn-cat-bar" id="cat-bar" role="navigation" aria-label="Filter by category"></div>
+
+    <!-- ======= AD SLOT (top) ======= -->
+    <div class="tn-container">
+      <div class="tn-ad" aria-label="Advertisement">
+        <!-- Google AdSense — replace with real ad code -->
+        <span>বিজ্ঞাপন</span>
+      </div>
+    </div>
+
+    <!-- ======= RECENT TOOLS ======= -->
+    <section id="recent-sec" class="hidden" aria-labelledby="recent-heading">
+      <div class="tn-sec-head">
+        <h2 id="recent-heading" data-bn="সম্প্রতি ব্যবহৃত" data-en="Recently Used">সম্প্রতি ব্যবহৃত</h2>
+      </div>
+      <div class="tn-tools-grid" id="recent-grid"></div>
+    </section>
+
+    <!-- ======= FAVORITES ======= -->
+    <section id="fav-sec" class="hidden" aria-labelledby="fav-heading">
+      <div class="tn-sec-head">
+        <h2 id="fav-heading" data-bn="আমার ফেভারিট" data-en="My Favorites">আমার ফেভারিট</h2>
+      </div>
+      <div class="tn-tools-grid" id="fav-grid"></div>
+    </section>
+
+    <!-- ======= MAIN TOOLS GRID ======= -->
+    <section aria-labelledby="all-tools-heading">
+      <div class="tn-sec-head">
+        <h2 id="all-tools-heading" id="grid-title" data-bn="সব টুলস" data-en="All Tools">সব টুলস</h2>
+        <span id="grid-count" class="text-muted text-sm" aria-live="polite"></span>
+      </div>
+      <div class="tn-tools-grid" id="main-grid" role="list"></div>
+      <div id="grid-empty" class="tn-empty hidden" aria-live="polite">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <h3>কোনো টুল পাওয়া যায়নি</h3>
+        <p>অন্য কিওয়ার্ড দিয়ে চেষ্টা করুন</p>
+      </div>
+    </section>
+
+    <!-- ======= AD SLOT (bottom) ======= -->
+    <div class="tn-container">
+      <div class="tn-ad tn-ad-rect" aria-label="Advertisement">
+        <!-- Google AdSense — replace with real ad code -->
+        <span>বিজ্ঞাপন</span>
+      </div>
+    </div>
+  </main>
+
+  <script src="script.js"></script>
+  <script>
+    /* ============================================
+       Homepage logic
+       © 2025 Muhammad Shourov. All rights reserved.
+       ============================================ */
+
+    var currentCat = 'all';
+    var currentSearch = '';
+
+    /* Build category pills */
+    function buildCatPills() {
+      var bar = document.getElementById('cat-bar');
+      if (!bar) return;
+      var counts = {};
+      TN_TOOLS.forEach(function(t) { counts[t.cat] = (counts[t.cat] || 0) + 1; });
+      bar.innerHTML = TN_CATS.map(function(c) {
+        var n = c.id === 'all' ? TN_TOOLS.length : (counts[c.id] || 0);
+        if (n === 0 && c.id !== 'all') return '';
+        return '<button class="tn-cat-pill' + (c.id === currentCat ? ' active' : '') + '" data-cat="' + c.id + '" onclick="setCat(\'' + c.id + '\')" aria-pressed="' + (c.id === currentCat) + '">' +
+          tnIcon(c.icon, 14) +
+          '<span data-bn="' + c.label + '" data-en="' + c.labelEn + '">' + (TnLang.get() === 'bn' ? c.label : c.labelEn) + '</span>' +
+          ' (' + n + ')</button>';
+      }).join('');
+    }
+
+    /* Set active category */
+    function setCat(cat) {
+      currentCat = cat;
+      currentSearch = '';
+      var heroInp = document.getElementById('hero-search');
+      if (heroInp) heroInp.value = '';
+      var drop = document.getElementById('hero-drop');
+      if (drop) { drop.classList.remove('open'); drop.innerHTML = ''; }
+      document.querySelectorAll('.tn-cat-pill').forEach(function(p) {
+        var active = p.dataset.cat === cat;
+        p.classList.toggle('active', active);
+        p.setAttribute('aria-pressed', active);
+      });
+      renderGrid();
+    }
+
+    /* Render main grid */
+    function renderGrid() {
+      var grid = document.getElementById('main-grid');
+      var empty = document.getElementById('grid-empty');
+      var count = document.getElementById('grid-count');
+      if (!grid) return;
+      var list = TN_TOOLS;
+      if (currentCat !== 'all') list = list.filter(function(t) { return t.cat === currentCat; });
+      if (currentSearch) {
+        var q = currentSearch.toLowerCase();
+        list = list.filter(function(t) {
+          return t.title.toLowerCase().includes(q) || t.titleBn.includes(q) || t.cat.includes(q) || t.desc.includes(q);
+        });
+      }
+      if (!list.length) {
+        grid.innerHTML = '';
+        grid.classList.add('hidden');
+        if (empty) empty.classList.remove('hidden');
+        if (count) count.textContent = '';
+      } else {
+        grid.innerHTML = list.map(function(t) { return tnToolCard(t, ''); }).join('');
+        grid.classList.remove('hidden');
+        if (empty) empty.classList.add('hidden');
+        if (count) count.textContent = list.length + ' টি টুলস';
+      }
+    }
+
+    /* Hero search */
+    function onHeroSearch(val) {
+      currentSearch = val.trim();
+      currentCat = 'all';
+      document.querySelectorAll('.tn-cat-pill').forEach(function(p) {
+        var active = p.dataset.cat === 'all';
+        p.classList.toggle('active', active);
+        p.setAttribute('aria-pressed', active);
+      });
+      var drop = document.getElementById('hero-drop');
+      if (drop) { drop.classList.remove('open'); drop.innerHTML = ''; }
+      renderGrid();
+    }
+
+    /* Render recent tools */
+    function renderRecent() {
+      var ids = TnRecent.get();
+      var sec = document.getElementById('recent-sec');
+      var grid = document.getElementById('recent-grid');
+      if (!ids.length || !sec || !grid) return;
+      var tools = ids.map(function(id) { return TN_TOOLS.find(function(t) { return t.id === id; }); }).filter(Boolean);
+      if (!tools.length) return;
+      grid.innerHTML = tools.map(function(t) { return tnToolCard(t, ''); }).join('');
+      sec.classList.remove('hidden');
+    }
+
+    /* Render favorite tools */
+    function renderFavs() {
+      var ids = TnFav.get();
+      var sec = document.getElementById('fav-sec');
+      var grid = document.getElementById('fav-grid');
+      if (!ids.length || !sec || !grid) return;
+      var tools = ids.map(function(id) { return TN_TOOLS.find(function(t) { return t.id === id; }); }).filter(Boolean);
+      if (!tools.length) return;
+      grid.innerHTML = tools.map(function(t) { return tnToolCard(t, ''); }).join('');
+      sec.classList.remove('hidden');
+    }
+
+    /* Init homepage */
+    document.addEventListener('DOMContentLoaded', function() {
+      buildCatPills();
+      renderGrid();
+      renderRecent();
+      renderFavs();
+    });
+  </script>
+</body>
+</html>
